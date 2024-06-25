@@ -20,16 +20,17 @@ namespace BibliotecaApi.Models
 
         public double? Latitude { get; set; }
 
-        public double? longitude { get; set; }
+        public double? Longitude { get; set; }
 
         public DateTime? DataAcesso { get; set; } // using System;
+
+        [NotMapped]
+        public string PasswordString { get; set; } = string.Empty;
 
         public string Perfil { get; set; } = string.Empty;
 
         public string Email { get; set; } = string.Empty;
 
-        [NotMapped]
-        public string PasswordString { get; set; } = string.Empty;
 
 
     }

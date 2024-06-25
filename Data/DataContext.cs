@@ -47,7 +47,7 @@ namespace BibliotecaApi.Data
             user.Perfil = "Admin";
             user.Email = "seuEmail@gmail.com";
             user.Latitude = -23.5200241;
-            user.longitude = -46.596498;
+            user.Longitude = -46.596498;
 
             modelBuilder.Entity<Usuario>().HasData(user);
             // Fim da Crição do usuário padrão.

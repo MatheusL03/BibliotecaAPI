@@ -31,13 +31,13 @@ namespace BibliotecaApi.Controllers
             return false;
         }
 
-        [HttpPost("Registrar")]
-        public async Task<IActionResult> RegistrarUsuario(Usuario user)
+         [HttpPost("Registrar")]
+        public async Task<IActionResult> RegistraUsuario(Usuario user)
         {
             try
             {
-                if(await UsarioExistente(user.Username))
-                    throw new System.Exception("Nome do usuário já existe");
+                if (await UsarioExistente(user.Username))
+                    throw new System.Exception("Nome de usuário já existe");
 
                 Criptografia.CriarPasswordHash(user.PasswordString, out byte[] hash, out byte[] salt);
                 user.PasswordString = string.Empty;
@@ -47,16 +47,14 @@ namespace BibliotecaApi.Controllers
                 await _context.SaveChangesAsync();
 
                 return Ok(user.Id);
-
             }
             catch (System.Exception ex)
             {
-                
-               return BadRequest(ex.Message);
+                return BadRequest(ex.Message);
             }
         }
 
-        
+
         [HttpPost("Autenticar")]
         public async Task<IActionResult> AutenticarUsuario(Usuario credenciais)
         {
@@ -64,102 +62,119 @@ namespace BibliotecaApi.Controllers
             {
                 Usuario? usuario = await _context.TB_USUARIOS
                     .FirstOrDefaultAsync(x => x.Username.ToLower().Equals(credenciais.Username.ToLower()));
-
-                if(usuario == null)
+                if (usuario == null)
                 {
-                    throw new System.Exception("Usuário não encontrado");
+                    throw new System.Exception("Usuário não encontrado.");
+
                 }
-
-                else if(!Criptografia
-                    .VerificarPasswordHash(credenciais.PasswordString, usuario.PasswordHash, usuario.PasswordSalt))
+                else if (!Criptografia.VerificarPasswordHash(credenciais.PasswordString, usuario.PasswordHash, usuario.PasswordSalt))
                 {
-                    throw new System.Exception("Senha incorreta");
+                    throw new System.Exception("Senha Incorreta.");
                 }
                 else
                 {
                     return Ok(usuario);
                 }
+
             }
             catch (System.Exception ex)
             {
                 return BadRequest(ex.Message);
+
             }
         }
 
-
-        [HttpPut]
-        public async Task<IActionResult> AlterarSenhaUsuario(Usuario credenciais)
+        [HttpGet("{usuarioId}")]
+        public async Task<IActionResult> GetUsuario(int usuarioId)
         {
             try
             {
-                Usuario? usuario = await _context.TB_USUARIOS
-                    .FirstOrDefaultAsync(x => x.Username.ToLower().Equals(credenciais.Username.ToLower()));
-
-                if(usuario == null)
-                    throw new System.Exception("Usuário não encontrado");
-
-                 Criptografia.CriarPasswordHash(credenciais.PasswordString, out byte[] hash, out byte[] salt);
-                 usuario.PasswordHash = hash;
-                 usuario.PasswordSalt = salt;
-
-                 _context.TB_USUARIOS.Update(usuario);
-                 int linhasAfetadas = await _context.SaveChangesAsync();
-                 return Ok(linhasAfetadas);                   
+                //List exigirá o using System.Collections.Generic
+                Usuario usuario = await _context.TB_USUARIOS //Busca o usuário no banco através do Id
+                .FirstOrDefaultAsync(x => x.Id == usuarioId);
+                return Ok(usuario);
             }
             catch (System.Exception ex)
             {
-                
                 return BadRequest(ex.Message);
             }
         }
-
-
-        [HttpPost("Autenticar")]
-        public async Task<IActionResult> AutenticaUsuario(Usuario credenciais)
-        { 
+        [HttpGet("GetByLogin/{login}")]
+        public async Task<IActionResult> GetUsuario(string login)
+        {
             try
             {
-                Usuario? usuario = await _context.TB_USUARIOS
-                    .FirstOrDefaultAsync(x => x.Username.ToLower().Equals(credenciais.Username.ToLower()));
-
-                if(usuario == null)
-                {
-                    throw new System.Exception("Usuário não encontrado");
-                }
-                else if(!Criptografia.VerificarPasswordHash(credenciais.PasswordString, usuario.PasswordHash, usuario.PasswordSalt))
-                {
-                    throw new System.Exception("Senha Incorreta."); 
-                }    
-                else
-                {
-                    usuario.DataAcesso = System.DateTime.Now;
-                    _context.TB_USUARIOS.Update(usuario);
-                    await _context.SaveChangesAsync();
-
-                    return Ok(usuario);
-                }
-
+                //List exigirá o using System.Collections.Generic
+                Usuario usuario = await _context.TB_USUARIOS //Busca o usuário no banco através do login
+                .FirstOrDefaultAsync(x => x.Username.ToLower() == login.ToLower());
+                return Ok(usuario);
             }
             catch (System.Exception ex)
             {
-                
                 return BadRequest(ex.Message);
             }
         }
-
-     
-
-
-        
-
-
-
-        
-
-
-        
-
-
+        //Método para alteração da geolocalização
+        [HttpPut("AtualizarLocalizacao")]
+        public async Task<IActionResult> AtualizarLocalizacao(Usuario u)
+        {
+            try
+            {
+                Usuario usuario = await _context.TB_USUARIOS //Busca o usuário no banco através do Id
+                .FirstOrDefaultAsync(x => x.Id == u.Id);
+                usuario.Latitude = u.Latitude;
+                usuario.Longitude = u.Longitude;
+                var attach = _context.Attach(usuario);
+                attach.Property(x => x.Id).IsModified = false;
+                attach.Property(x => x.Latitude).IsModified = true;
+                attach.Property(x => x.Longitude).IsModified = true;
+                int linhasAfetadas = await _context.SaveChangesAsync(); //Confirma a alteração no banco
+                return Ok(linhasAfetadas); //Retorna as linhas afetadas (Geralmente sempre 1 linha msm)
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpPut("AtualizarEmail")]
+        public async Task<IActionResult> AtualizarEmail(Usuario u)
+        {
+            try
+            {
+                Usuario usuario = await _context.TB_USUARIOS //Busca o usuário no banco através do Id
+                .FirstOrDefaultAsync(x => x.Id == u.Id);
+                usuario.Email = u.Email;
+                var attach = _context.Attach(usuario);
+                attach.Property(x => x.Id).IsModified = false;
+                attach.Property(x => x.Email).IsModified = true;
+                int linhasAfetadas = await _context.SaveChangesAsync(); //Confirma a alteração no banco
+                return Ok(linhasAfetadas); //Retorna as linhas afetadas (Geralmente sempre 1 linha msm)
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        //Método para alteração da foto
+        [HttpPut("AtualizarFoto")]
+        public async Task<IActionResult> AtualizarFoto(Usuario u)
+        {
+            try
+            {
+                Usuario usuario = await _context.TB_USUARIOS
+                .FirstOrDefaultAsync(x => x.Id == u.Id);
+                usuario.Foto = u.Foto;
+                var attach = _context.Attach(usuario);
+                attach.Property(x => x.Id).IsModified = false;
+                attach.Property(x => x.Foto).IsModified = true;
+                int linhasAfetadas = await _context.SaveChangesAsync();
+                return Ok(linhasAfetadas);
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
     }
 }
